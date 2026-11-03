@@ -30,10 +30,11 @@ jobs:
           name: MusicLinkExtractor-Android
           path: MusicLinkExtractor-Android.apk
       - name: Publish GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" MusicLinkExtractor-Android.apk \
-            --title "MusicLinkExtractor ${GITHUB_REF_NAME}" \
-            --notes "Android APK. Extracts publicly accessible audio resource URLs from web pages. Does not bypass DRM, login, or paid access controls."
+          VERSION="v1.0.0"
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then VERSION="${GITHUB_REF_NAME}"; fi
+          gh release view "$VERSION" >/dev/null 2>&1 || gh release create "$VERSION" --title "MusicLinkExtractor $VERSION" --notes "Android APK. Extracts publicly accessible audio resource URLs from web pages. Does not bypass DRM, login, or paid access controls."
+          gh release upload "$VERSION" MusicLinkExtractor-Android.apk --clobber
