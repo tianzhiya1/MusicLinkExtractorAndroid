@@ -1,0 +1,39 @@
+name: Android APK
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+      - name: Build APK
+        run: gradle --no-daemon assembleDebug
+      - name: Rename APK
+        run: cp app/build/outputs/apk/debug/app-debug.apk MusicLinkExtractor-Android.apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MusicLinkExtractor-Android
+          path: MusicLinkExtractor-Android.apk
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" MusicLinkExtractor-Android.apk \
+            --title "MusicLinkExtractor ${GITHUB_REF_NAME}" \
+            --notes "Android APK. Extracts publicly accessible audio resource URLs from web pages. Does not bypass DRM, login, or paid access controls."
